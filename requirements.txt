@@ -1,0 +1,19 @@
+# FastAPI for building the API
+fastapi
+
+# Uvicorn for running the FastAPI server
+uvicorn
+
+# SQLAlchemy for database models and interactions
+sqlalchemy
+# PostgreSQL driver for SQLAlchemy
+psycopg2-binary
+
+# FuzzyWuzzy for string matching
+fuzzywuzzy
+
+# BeautifulSoup for web scraping (requires lxml for parsing)
+beautifulsoup4
+lxml
+
+requests
