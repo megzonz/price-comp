@@ -1,26 +1,9 @@
-from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
 
-def normalize_string(s):
-    return ''.join(char.lower() for char in s if char.isalnum())
-
-def map_products(products):
-    mapped_products = {}
-    
-    for product in products:
-        normalized_name = normalize_string(product['name'])
+class CategoryMapper:
+    def __init__(self, gjirafa_categories):
+        self.gjirafa_categories = gjirafa_categories  
         
-        best_match = None
-        best_score = 0
-        
-        for mapped_name in mapped_products:
-            score = fuzz.ratio(normalized_name, mapped_name)
-            if score > best_score and score > 80:  # Adjust threshold as needed
-                best_match = mapped_name
-                best_score = score
-        
-        if best_match:
-            mapped_products[best_match].append(product)
-        else:
-            mapped_products[normalized_name] = [product]
-    
-    return mapped_products
+    def get_best_match(self, foleja_category):
+        match, score = process.extractOne(foleja_category, self.gjirafa_categories)
+        return match if score >= 80 else None  

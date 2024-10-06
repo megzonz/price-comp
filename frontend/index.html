@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Comparison</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8 text-center">Price Comparison</h1>
+        <div class="mb-8">
+            <input type="text" id="searchInput" placeholder="Search for a product..." class="w-full p-4 border rounded-lg shadow-sm">
+            <button id="searchButton" class="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">Search</button>
+        </div>
+        <table class="min-w-full bg-white border border-gray-200">
+            <thead>
+                <tr>
+                    <th class="py-2 px-4 border-b">Product Image</th>
+                    <th class="py-2 px-4 border-b">Product Name</th>
+                    <th class="py-2 px-4 border-b">Store</th>
+                    <th class="py-2 px-4 border-b">Price</th>
+                    <th class="py-2 px-4 border-b">Action</th>
+                </tr>
+            </thead>
+            <tbody id="results">
+                <!-- Results will be populated here -->
+            </tbody>
+        </table>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

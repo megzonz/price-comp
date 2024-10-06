@@ -1,21 +1,19 @@
 from fastapi import FastAPI
-from api.endpoints import search, products
-from database.database import engine
-from database.models import Base
+from fastapi.staticfiles import StaticFiles
+from api.endpoints import search
+from database.retrieval import get_all_products
 
-app = FastAPI(title="Kosovo Price Comparison API")
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
 
-# Include routers
-app.include_router(search.router, prefix="/search", tags=["search"])
-app.include_router(products.router, prefix="/products", tags=["products"])
+app = FastAPI()
 
-@app.get("/")
-async def root():
-    return {"message": "Welcome to the Kosovo Price Comparison API"}
+# Include the search router
+app.include_router(search.router)
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.get("/products")
+def read_products():
+    products = get_all_products()
+    return products
+
+# Serve the frontend (HTML, JS, CSS)
+app.mount("/", StaticFiles(directory="frontend", html=True), name="static")
