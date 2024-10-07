@@ -41,9 +41,8 @@ class GjirafaScraper(BaseScraper):
                     product_url = f"{self.base_url}{product_url}"
 
                 # Extract the image source
-                image_element = product_item.select_one('img')
+                image_element = product_item.select_one('section.picture img')  # More specific selector
                 image_src = image_element.get('src', '').strip() if image_element else None
-
                 # Extract and clean the price
                 price_element = product_item.select_one('span.price.font-semibold')
                 getting_price = price_element.text.strip() if price_element else '0.00'

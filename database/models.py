@@ -1,8 +1,7 @@
-# models.py
 import os
-from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey, DateTime, DECIMAL
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, DateTime, DECIMAL
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 import datetime
 
 Base = declarative_base()
@@ -12,12 +11,17 @@ class Store(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
     logo_url = Column(String)
-    link_to_product = Column(String)
+    prices = relationship("Price", back_populates="store")
+
 
 class Category(Base):
     __tablename__ = 'categories'
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
+
+    # Relationship to get products in the category
+    products = relationship("Product", back_populates="category")
+
 
 class Product(Base):
     __tablename__ = 'products'
@@ -27,6 +31,10 @@ class Product(Base):
     image_url = Column(String)
     store_id = Column(Integer, ForeignKey('stores.id'))
     category_id = Column(Integer, ForeignKey('categories.id'))
+    link_to_product = Column(String)
+    prices = relationship("Price", back_populates="product")
+    category = relationship("Category", back_populates="products")
+
 
 class Price(Base):
     __tablename__ = 'prices'
@@ -36,6 +44,8 @@ class Price(Base):
     price = Column(DECIMAL(10, 2), nullable=False)
     currency = Column(String(10), nullable=False)
     scraped_at = Column(DateTime, default=datetime.datetime.utcnow)
+    product = relationship("Product", back_populates="prices")
+    store = relationship("Store", back_populates="prices")
 
 
 DB_USER = os.getenv("DB_USER")
@@ -46,7 +56,6 @@ DB_NAME = os.getenv("DB_NAME")
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
-
 
 def create_tables():
     Base.metadata.create_all(engine)

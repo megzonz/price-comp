@@ -46,16 +46,24 @@ class FolejaScraper(BaseScraper):
 
                     # Handle whole and decimal parts
                     try:
-                        whole_price_element = price_container.contents[2].strip()
+                        # Extract the whole price (1,119) and remove any commas
+                        whole_price_element = price_container.contents[2].strip().replace(',', '')
+                        
+                        # Extract the decimal price (00)
                         decimal_price_element = price_container.select_one('span.decimal-rounded-price')
                         decimal_price = decimal_price_element.text.strip() if decimal_price_element else '00'
-                        price_text = f"{whole_price_element}.{decimal_price}"  # No currency symbol here
-                        price = float(price_text.replace(',', '.').strip())  # Convert to float
+                        
+                        # Combine the whole and decimal parts
+                        price_text = f"{whole_price_element}.{decimal_price}"  # e.g., "1119.00"
+                        
+                        # Convert to float
+                        price = float(price_text.strip())  # Convert to float
+
+                        # Return the result in the desired format
+                        print(f"{currency} {price:.2f}")  # Ensure two decimal places
                     except (IndexError, ValueError) as e:
                         print(f"Error extracting price: {e}")
                         price = 0.00  # Default price when not available
-                else:
-                    price = 0.00  # Default price when not available
 
                 # Create a dictionary for the product data
                 product_data = {

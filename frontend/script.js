@@ -31,17 +31,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Identify the product with the lowest price
+        const bestPrice = Math.min(...products.map(product => product.price));
+        
         products.forEach(product => {
-            // Log the raw product data for debugging
-            console.log('Raw Product Data:', product);
+            const isBestDeal = product.price === bestPrice;
 
             const productElement = document.createElement('tr');
             productElement.innerHTML = `
                 <td class="py-4 px-4 border-b"><img src="${product.image_url}" alt="${product.name}" class="w-24 h-24 object-cover"></td>
                 <td class="py-4 px-4 border-b">${product.name}</td>
-                <td class="py-4 px-4 border-b">${product.store_name}</td>
-                <td class="py-4 px-4 border-b text-green-600 font-bold">${product.price.toFixed(2)} €</td>
-                <td class="py-4 px-4 border-b"><a href="${product.link_to_product}" target="_blank" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">View Product</a></td>
+                <td class="py-4 px-4 border-b"><img src="${product.store_logo_url}" alt="${product.store_name}" class="store-logo"></td>
+                <td class="py-4 px-4 border-b text-green-600 font-bold">${product.price.toFixed(2)} € 
+                    ${isBestDeal ? '<span class="best-deal-badge">Best Deal</span>' : ''}
+                </td>
+                <td class="py-4 px-4 border-b"><a href="${product.link_to_product}" target="_blank" class="view-product-button">
+                    Shiko oferten <i class="fas fa-arrow-right"></i>
+                </a></td>
             `;
             resultsContainer.appendChild(productElement);
         });
