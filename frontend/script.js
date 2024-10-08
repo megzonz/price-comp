@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const productElement = document.createElement('tr');
             productElement.innerHTML = `
-                <td class="py-4 px-4 border-b"><img src="${product.image_url}" alt="${product.name}" class="w-24 h-24 object-cover"></td>
+                <td class="py-4 px-4 border-b"><img src="${product.image_url}" alt="${product.name}" class="product-image"></td>
                 <td class="py-4 px-4 border-b">${product.name}</td>
                 <td class="py-4 px-4 border-b"><img src="${product.store_logo_url}" alt="${product.store_name}" class="store-logo"></td>
                 <td class="py-4 px-4 border-b text-green-600 font-bold">${product.price.toFixed(2)} € 

@@ -1,3 +1,4 @@
+/* Store logo styling */
 .store-logo {
     width: 50px;
     height: 50px;
@@ -5,26 +6,32 @@
     border-radius: 50%;
 }
 
+/* Search container for centering the search input and button */
 .search-container {
     max-width: 600px;
     margin: 0 auto;
     text-align: center;
+    margin-bottom: 24px; /* Add bottom margin for better spacing */
 }
 
+/* Search input styling */
 .search-input {
     width: 100%;
     padding: 16px;
     border: 2px solid #e5e7eb;
     border-radius: 9999px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: border-color 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* Focus effect on search input */
 .search-input:focus {
     border-color: #3b82f6;
     outline: none;
+    box-shadow: 0 6px 10px rgba(59, 130, 246, 0.1);
 }
 
+/* Search button styling */
 .search-button {
     margin-top: 16px;
     padding: 12px 32px;
@@ -32,19 +39,32 @@
     background-color: #3b82f6;
     color: white;
     font-weight: bold;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Hover effect for search button */
 .search-button:hover {
     background-color: #2563eb;
+    box-shadow: 0 6px 12px rgba(37, 99, 235, 0.2);
 }
 
+/* Container for better spacing and padding */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Product table styling */
 .product-table {
+    width: 100%;
     background-color: white;
     border-radius: 12px;
-    overflow: hidden;
     margin-top: 24px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-collapse: separate;
+    border-spacing: 0 15px;
 }
 
 .product-table th,
@@ -53,11 +73,15 @@
     text-align: left;
 }
 
+/* Styling for table headers */
 .product-table th {
     background-color: #f9fafb;
     font-weight: bold;
+    text-transform: uppercase;
+    color: #6b7280;
 }
 
+/* Hover effect for table rows */
 .product-table tbody tr {
     transition: background-color 0.3s ease;
 }
@@ -66,42 +90,98 @@
     background-color: #f3f4f6;
 }
 
+/* Product image styling */
 .product-image {
     width: 80px;
     height: 80px;
+    object-fit: contain;
     border-radius: 12px;
-    object-fit: cover;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Product name styling */
 .product-name {
     font-size: 18px;
     font-weight: 600;
     color: #1f2937;
 }
 
+/* Price styling */
 .product-price {
     color: #10b981;
     font-size: 18px;
     font-weight: bold;
 }
 
+/* Best deal badge styling */
+.best-deal-badge {
+    background-color: #d41900;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-left: 10px;
+}
+
+/* Call to action button styling */
 .view-product-button {
-    background-color: #2563eb;
+    background-color: #FF4438;
     color: white;
     padding: 10px 20px;
     border-radius: 8px;
-    transition: background-color 0.3s ease;
+    font-weight: bold;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Hover effect for action button */
 .view-product-button:hover {
-    background-color: #1e40af;
+    background-color: #e63b2e;
+    box-shadow: 0 6px 12px rgba(230, 59, 46, 0.2);
 }
 
+/* Icon margin in action button */
+.view-product-button i {
+    margin-left: 8px;
+}
+
+/* Responsive styling for mobile devices */
 @media (max-width: 768px) {
     .product-table th,
     .product-table td {
         font-size: 14px;
         padding: 12px;
     }
+    
+    .search-container {
+        max-width: 100%;
+        padding: 0 16px;
+    }
+    
+    .search-input {
+        padding: 12px;
+    }
+    
+    .search-button {
+        padding: 10px 24px;
+    }
+    
+    .product-image {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .view-product-button {
+        padding: 8px 16px;
+    }
+    
+    .best-deal-badge {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
 }
-
