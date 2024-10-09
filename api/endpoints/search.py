@@ -28,18 +28,29 @@ def get_db():
 
 @router.get("/search", response_model=SearchResponse)
 def search_products(query: str, db: Session = Depends(get_db)):
-    # Query products based on the search query (case-insensitive)
-    products = (
+    # Split the query into individual words
+    query_parts = query.split()
+
+    # Start building the query
+    base_query = (
         db.query(
             Product.name,
             Product.image_url,
-            Store.logo_url.label('store_logo_url'),  # Change here
+            Store.logo_url.label('store_logo_url'),
             func.min(Price.price).label('price'),
             Product.link_to_product
         )
         .join(Price, Product.id == Price.product_id)
         .join(Store, Price.store_id == Store.id)
-        .filter(Product.name.ilike(f"%{query}%"))
+    )
+
+    # Add filters for each part of the query
+    for part in query_parts:
+        base_query = base_query.filter(Product.name.ilike(f"%{part}%"))
+
+    # Group by product and store and order by price
+    products = (
+        base_query
         .group_by(Product.id, Store.id)
         .order_by(func.min(Price.price).asc())
         .all()
@@ -53,7 +64,7 @@ def search_products(query: str, db: Session = Depends(get_db)):
         {
             "name": product.name,
             "image_url": product.image_url,
-            "store_logo_url": product.store_logo_url, 
+            "store_logo_url": product.store_logo_url,
             "price": float(product.price),
             "link_to_product": product.link_to_product
         }

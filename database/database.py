@@ -7,7 +7,6 @@ import os
 
 def get_db_connection():
     try:
-
         connection = psycopg2.connect(
             dbname=os.getenv("DB_NAME"),  
             user=os.getenv("DB_USER"),    
@@ -20,109 +19,53 @@ def get_db_connection():
         print(f"Error connecting to database: {e}")
         raise
 
-def clear_old_data(category_name):
-    with Session() as session:
-        try:
-            # Delete prices associated with the category
-            session.query(Price).filter(Price.product_id.in_(
-                session.query(Product.id).join(Category).filter(Category.name == category_name)
-            )).delete(synchronize_session=False)
-
-            # Optionally, delete products that no longer have prices
-            session.query(Product).filter(~Product.id.in_(session.query(Price.product_id))).delete(synchronize_session=False)
-
-            print(f"Old data cleared for category: {category_name}")
-            session.commit()
-        
-        except Exception as e:
-            session.rollback()
-            print(f"Error clearing old data: {e}")
-            
-def clean_price(price):
-    if isinstance(price, (int, float)):
-        return Decimal(str(price))
-    elif isinstance(price, str):
-        # Remove non-numeric characters and convert to Decimal
-        return Decimal(''.join(filter(lambda x: x.isdigit() or x == '.', price)))
-    else:
-        raise ValueError(f"Unexpected price type: {type(price)}")
-
 def insert_product(product_data):
-    with Session() as session:
-        try:
-            # Check if store exists, if not insert it
-            store = session.query(Store).filter(Store.name == product_data['store_name']).first()
-            if not store:
-                store = Store(
-                    name=product_data['store_name'],
-                    logo_url=product_data.get('logo_url')
-                )
-                session.add(store)
-                session.flush()
+    """
+    Inserts a product into the database. It first checks if the store and category exist,
+    and inserts them if not. Then, it adds the product and its price in the appropriate tables.
+    """
+    session = Session()
 
-            # Check if category exists, if not insert it
-            category = session.query(Category).filter(Category.name == product_data['category_name']).first()
-            if not category:
-                category = Category(name=product_data['category_name'])
-                session.add(category)
-                session.flush()
+    # Check if the store exists, if not, insert it
+    store = session.query(Store).filter_by(name=product_data['store_name']).first()
+    if not store:
+        store = Store(name=product_data['store_name'], logo_url=product_data['logo_url'])
+        session.add(store)
+        session.commit()
 
-            # Check if product already exists
-            product = session.query(Product).filter(Product.name == product_data['name']).first()
+    # Check if the category exists, if not, insert it
+    category = session.query(Category).filter_by(category_url=product_data['category_name']).first()
+    if not category:
+        category = Category(category_url=product_data['category_name'])
+        session.add(category)
+        session.commit()
 
-            if product:
-                # Update product details
-                product.description = product_data.get('description', product.description)
-                product.image_url = product_data.get('image_url', product.image_url)
-                product.link_to_product = product_data.get('link_to_product', product.link_to_product)
-                product.category_id = category.id
-                print(f"Product {product_data['name']} updated in the database.")
-            else:
-                # Insert product into products table
-                product = Product(
-                    name=product_data['name'],
-                    description=product_data.get('description'),
-                    image_url=product_data['image_url'],
-                    store_id=store.id,
-                    category_id=category.id,
-                    link_to_product=product_data.get('link_to_product')
-                )
-                session.add(product)
-                session.flush()
-                print(f"Product {product_data['name']} added to the database.")
+    # Check if the product exists (optional: if you need to avoid duplicate product names)
+    existing_product = session.query(Product).filter_by(name=product_data['name'], store_id=store.id).first()
+    if not existing_product:
+        # Insert the product into the database
+        product = Product(
+            name=product_data['name'],
+            image_url=product_data['image_url'],
+            link_to_product=product_data['link_to_product'],
+            store_id=store.id,
+            category_id=category.id
+        )
+        session.add(product)
+        session.commit()
+    else:
+        product = existing_product  # If the product already exists, we don't insert it again
 
-            # Insert or update price in prices table
-            price_entry = session.query(Price).filter(
-                Price.product_id == product.id,
-                Price.store_id == store.id
-            ).first()
+    # Insert the product price into the Price table
+    price_entry = Price(
+        product_id=product.id,
+        price=Decimal(product_data['price']),
+        scraped_at=datetime.datetime.utcnow()  # Automatically use the current time for scraped_at
+    )
 
-            try:
-                cleaned_price = clean_price(product_data['price'])
-            except ValueError as e:
-                print(f"Error cleaning price for {product_data['name']}: {e}")
-                return  # Skip price update if price cleaning fails
+    session.add(price_entry)
+    session.commit()
+    session.close()
 
-            if price_entry:
-                price_entry.price = cleaned_price
-                price_entry.scraped_at = datetime.datetime.utcnow()
-                print(f"Price updated for product {product_data['name']}.")
-            else:
-                new_price = Price(
-                    product_id=product.id,
-                    store_id=store.id,
-                    price=cleaned_price,
-                    currency='EUR',
-                    scraped_at=datetime.datetime.utcnow()
-                )
-                session.add(new_price)
-                print(f"New price added for product {product_data['name']}.")
+    print(f"Product '{product_data['name']}' with price {product_data['price']} inserted into the database.")
 
-            # Commit transaction
-            session.commit()
-        
-        except Exception as e:
-            session.rollback()
-            print(f"Error inserting product: {e}")
-        finally:
-            session.close()

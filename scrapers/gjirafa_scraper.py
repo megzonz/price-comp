@@ -5,11 +5,10 @@ class GjirafaScraper(BaseScraper):
     def __init__(self):
         super().__init__('https://gjirafa50.com')
 
-
-
     def search_products(self, query):
         page_number = 1
         all_products = []
+        category_url = query  # Start with the original category URL
 
         # Extract the company logo
         soup_main = self.get_page(self.base_url)
@@ -19,8 +18,15 @@ class GjirafaScraper(BaseScraper):
             logo_url = f"{self.base_url}{logo_url}"
 
         while True:
-            search_url = f"{self.base_url}/{query}?pagenumber={page_number}"
+            search_url = f"{self.base_url}/{category_url}?pagenumber={page_number}"
             print(f"Scraping URL: {search_url}")
+            response = self.session.get(search_url)  # Use session.get() to get the actual URL
+            if response.url != search_url:
+                # Redirect detected, update category_url with the new URL
+                new_url = response.url.replace(self.base_url, '').split('?')[0].strip('/')
+                print(f"Redirect detected! Updating category_url to: {new_url}")
+                category_url = new_url
+
             soup = self.get_page(search_url)
 
             # Select all product items
@@ -49,18 +55,15 @@ class GjirafaScraper(BaseScraper):
 
                 price = float(re.sub(r'[^\d.]', '', getting_price))
 
-                
-
-
                 # Create a dictionary for the product data
                 product_data = {
                     'name': name,
                     'price': price,
                     'image_url': image_src,
-                    'store_name': "Gjirafa50", 
+                    'store_name': "Gjirafa50",
                     'logo_url': logo_url,
                     'link_to_product': product_url,
-                    'category_name': query  # Add category_name here
+                    'category_name': category_url  # Use updated category_name here if redirect happens
                 }
 
                 # Save the product to the database
@@ -69,5 +72,5 @@ class GjirafaScraper(BaseScraper):
                 all_products.append(product_data)
 
             page_number += 1
-        
+
         return all_products

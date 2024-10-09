@@ -1,4 +1,4 @@
-import re
+import requests
 from scrapers.base_scraper import BaseScraper
 
 class Mall75Scraper(BaseScraper):
@@ -9,7 +9,6 @@ class Mall75Scraper(BaseScraper):
         page_number = 1
         all_products = []
 
-        # Extract the company logo
         soup_main = self.get_page(self.base_url)
         logo_tag = soup_main.find('img', class_='ty-pict', alt='75Mall')
         logo_url = logo_tag['src'] if logo_tag else None
@@ -19,7 +18,15 @@ class Mall75Scraper(BaseScraper):
         while True:
             search_url = f"{self.base_url}/{query}/page-{page_number}/"
             print(f"Scraping URL: {search_url}")
-            soup = self.get_page(search_url)
+            
+            try:
+                soup = self.get_page(search_url)
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 404:
+                    print(f"Reached the end of pagination at page {page_number}.")
+                    break
+                else:
+                    raise  # Re-raise other HTTP errors
 
             # Select all product items
             product_cards = soup.find_all('div', class_='ty-column4')
@@ -29,7 +36,6 @@ class Mall75Scraper(BaseScraper):
 
             for card in product_cards:
                 try:
-                    # Product name
                     name_element = card.find('a', class_='product-title')
                     if not name_element:
                         continue
@@ -40,19 +46,17 @@ class Mall75Scraper(BaseScraper):
                     if product_link and not product_link.startswith('http'):
                         product_link = f"{self.base_url}{product_link}"
 
-                    # Extract the price container by targeting the span with a specific ID pattern
+                    price = None
                     price_container = card.find('span', id=lambda x: x and x.startswith('discounted_price_'))
-
                     if price_container:
-                        # Get the full price text and clean it
-                        price_text = price_container.get_text(strip=True)
-                        price_text = re.sub(r'[^\d.,]', '', price_text).replace(',', '.')
-                        try:
-                            price = float(price_text)
-                        except ValueError:
-                            price = 0.0
+                        main_price = price_container.contents[0].strip().replace(',', '') 
+                        decimal_price = price_container.find('sup').text.strip()
+
+                        # Combine the main price and the decimal part
+                        price = f"{main_price}.{decimal_price}"
+                        print(f"Price: {price}")
                     else:
-                        price = 0.0
+                        print("Price: N/A")
 
                     # Extract image URL
                     img_tag = card.find('img', class_='ty-pict')
