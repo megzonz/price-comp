@@ -4,8 +4,9 @@ from scrapers.base_scraper import BaseScraper
 class GjirafaScraper(BaseScraper):
     def __init__(self):
         super().__init__('https://gjirafa50.com')
+        self.redirected_category_url = None  # Initialize redirected_category_url
 
-    def search_products(self, query):
+    def search_products(self, query, db):
         page_number = 1
         all_products = []
         category_url = query  # Start with the original category URL
@@ -18,14 +19,18 @@ class GjirafaScraper(BaseScraper):
             logo_url = f"{self.base_url}{logo_url}"
 
         while True:
-            search_url = f"{self.base_url}/{category_url}?pagenumber={page_number}"
+            search_url = f"{self.base_url}/{category_url}?pagenumber={page_number}&orderby=&hls=false&is=true"
             print(f"Scraping URL: {search_url}")
-            response = self.session.get(search_url)  # Use session.get() to get the actual URL
+            response = self.session.get(search_url)
+
+            # Handle redirect if it occurs
             if response.url != search_url:
-                # Redirect detected, update category_url with the new URL
                 new_url = response.url.replace(self.base_url, '').split('?')[0].strip('/')
                 print(f"Redirect detected! Updating category_url to: {new_url}")
+                self.redirected_category_url = new_url
                 category_url = new_url
+            else:
+                self.redirected_category_url = None  
 
             soup = self.get_page(search_url)
 
@@ -36,6 +41,12 @@ class GjirafaScraper(BaseScraper):
                 break
 
             for product_item in product_items:
+                # Check if the product is marked as "outlet"
+                outlet_element = product_item.select_one('i.icon-outlet')
+                if outlet_element:
+                    print("Skipping outlet product.")
+                    continue  # Skip this product if it's marked as "outlet"
+
                 # Extract product name and URL
                 title_element = product_item.select_one('h3.product-title a')
                 if not title_element:
@@ -63,11 +74,11 @@ class GjirafaScraper(BaseScraper):
                     'store_name': "Gjirafa50",
                     'logo_url': logo_url,
                     'link_to_product': product_url,
-                    'category_name': category_url  # Use updated category_name here if redirect happens
+                    'category_name': category_url  
                 }
 
-                # Save the product to the database
-                self.save_to_db(product_data)
+                # Save the product to the database using BaseScraper's save_to_db
+                self.save_to_db(product_data, db)
 
                 all_products.append(product_data)
 

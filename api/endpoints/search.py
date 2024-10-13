@@ -1,22 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from database.models import Store, Product, Price, Category, Session as DBSession
+from database.models import Store, Product, Price, ProductStoreLink, Session as DBSession
 from typing import List
 from pydantic import BaseModel
 
 router = APIRouter()
 
-# Updated Pydantic model for the response
-class ProductResponse(BaseModel):
-    name: str
-    image_url: str
-    store_logo_url: str 
+class OfferResponse(BaseModel):
+    store_name: str
     price: float
     link_to_product: str
 
-class SearchResponse(BaseModel):
-    products: List[ProductResponse]
+class ProductDetailResponse(BaseModel):
+    name: str
+    image_url: str
+    offers: List[OfferResponse]
 
 # Dependency to get a DB session
 def get_db():
@@ -26,49 +25,51 @@ def get_db():
     finally:
         db.close()
 
-@router.get("/search", response_model=SearchResponse)
+@router.get("/search", response_model=List[ProductDetailResponse])
 def search_products(query: str, db: Session = Depends(get_db)):
-    # Split the query into individual words
-    query_parts = query.split()
-
-    # Start building the query
-    base_query = (
-        db.query(
-            Product.name,
-            Product.image_url,
-            Store.logo_url.label('store_logo_url'),
-            func.min(Price.price).label('price'),
-            Product.link_to_product
+    try:
+        query_parts = query.split()
+        base_query = (
+            db.query(
+                Product.id,  # Add product id here
+                Product.name,
+                Product.image_url,
+                Store.name.label('store_name'),
+                Store.logo_url.label('store_logo_url'),
+                func.min(Price.price).label('price'),
+                ProductStoreLink.link_to_product
+            )
+            .join(ProductStoreLink, ProductStoreLink.product_id == Product.id)
+            .join(Price, ProductStoreLink.id == Price.product_store_link_id)
+            .join(Store, ProductStoreLink.store_id == Store.id)
         )
-        .join(Price, Product.id == Price.product_id)
-        .join(Store, Price.store_id == Store.id)
-    )
 
-    # Add filters for each part of the query
-    for part in query_parts:
-        base_query = base_query.filter(Product.name.ilike(f"%{part}%"))
+        for part in query_parts:
+            base_query = base_query.filter(Product.name.ilike(f"%{part}%"))
 
-    # Group by product and store and order by price
-    products = (
-        base_query
-        .group_by(Product.id, Store.id)
-        .order_by(func.min(Price.price).asc())
-        .all()
-    )
+        results = base_query.group_by(Product.id, Store.id, ProductStoreLink.id).order_by(func.min(Price.price).asc()).all()
 
-    if not products:
-        return {"products": []}
+        if not results:
+            return []
 
-    # Format the response
-    result = [
-        {
-            "name": product.name,
-            "image_url": product.image_url,
-            "store_logo_url": product.store_logo_url,
-            "price": float(product.price),
-            "link_to_product": product.link_to_product
-        }
-        for product in products
-    ]
+        products = {}
+        for result in results:
+            product_id = result.id  # Capture the product id here
+            if product_id not in products:
+                products[product_id] = {
+                    "id": product_id,  # Add the id here
+                    "name": result.name,
+                    "image_url": result.image_url,
+                    "offers": []
+                }
+            products[product_id]["offers"].append({
+                "store_name": result.store_name,
+                "price": float(result.price),
+                "link_to_product": result.link_to_product
+            })
 
-    return {"products": result}
+        return list(products.values())
+
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

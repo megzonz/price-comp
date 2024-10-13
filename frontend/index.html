@@ -7,19 +7,19 @@
     <title>Ta kisha gjetë ma lirë!</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-12">
         <h1 class="text-4xl font-extrabold mb-8 text-center text-gray-900">Ta kisha gjetë ma lirë!</h1>
-
+        
         <div class="search-container mb-12">
             <input type="text" id="searchInput" placeholder="Search for a product..." class="search-input">
             <button id="searchButton" class="search-button">Search</button>
+            <div id="suggestionBox" class="bg-white shadow-lg border rounded mt-2 hidden"></div>
         </div>
+        
 
-        <div class="overflow-x-auto">
+        <div id="productList" class="overflow-x-auto">
             <table class="min-w-full product-table">
                 <thead>
                     <tr>
@@ -31,9 +31,28 @@
                     </tr>
                 </thead>
                 <tbody id="results">
-                    <!-- Results will be populated here -->
+                    <!-- Product search results will be populated here -->
                 </tbody>
             </table>
+        </div>
+
+        <div id="productOffers" class="hidden">
+            <h2 class="text-2xl font-bold mb-4" id="productTitle"></h2>
+            <div class="offers-container">
+                <table class="min-w-full offers-table">
+                    <thead>
+                        <tr>
+                            <th>Store</th>
+                            <th>Price</th>
+                            <th>Link</th>
+                        </tr>
+                    </thead>
+                    <tbody id="offerResults">
+                        <!-- Product offers will be populated here -->
+                    </tbody>
+                </table>
+                <button id="backButton" class="mt-4">Back to Search</button>
+            </div>
         </div>
     </div>
 

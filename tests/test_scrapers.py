@@ -1,7 +1,8 @@
 import json
 import unittest
-from scrapers.gjirafa_scraper import GjirafaScraper  
-from database.models import create_tables  
+from scrapers.foleja_scraper import FolejaScraper
+from scrapers.gjirafa_scraper import GjirafaScraper
+from database.models import create_tables, Session
 
 class TestGjirafaScraper(unittest.TestCase):
 
@@ -11,6 +12,13 @@ class TestGjirafaScraper(unittest.TestCase):
         
         # Initialize the scraper
         self.scraper = GjirafaScraper()
+
+        # Create a new database session for the test
+        self.db = Session()
+
+    def tearDown(self):
+        # Close the session after each test
+        self.db.close()
 
     def test_scrape_all_categories(self):
         # Load categories from gjirafa_categories.json
@@ -24,8 +32,8 @@ class TestGjirafaScraper(unittest.TestCase):
             category_url = category['category_url']
             print(f"Scraping category: {category_url}")
             
-            # Call the search_products function for each category
-            scraped_data = self.scraper.search_products(category_url)
+            # Call the search_products function for each category, passing the db session
+            scraped_data = self.scraper.search_products(category_url, self.db)
 
             # Update category_url in case of a redirect
             if self.scraper.redirected_category_url:
@@ -34,12 +42,7 @@ class TestGjirafaScraper(unittest.TestCase):
             else:
                 updated_categories.append(category)
 
-            # Print the output for inspection
-            print(f"Scraped Data for category '{category_url}':")
-            for product in scraped_data:
-                print(product)
-
-            # Optional: Check if the scraped data contains expected fields
+            # Assert that each product has the expected fields (no 'offers')
             for product in scraped_data:
                 self.assertIn('name', product)
                 self.assertIn('price', product)
@@ -51,9 +54,46 @@ class TestGjirafaScraper(unittest.TestCase):
         with open('gjirafa_categories.json', 'w') as file:
             json.dump(updated_categories, file, indent=4)
 
+class TestFolejaScraper(unittest.TestCase):
+
+    def setUp(self):
+        # Create the tables before each test
+        create_tables()
+
+        # Initialize the scraper
+        self.scraper = FolejaScraper()
+
+        # Create a new database session for the test
+        self.db = Session()
+
+    def tearDown(self):
+        # Close the session after each test
+        self.db.close()
+
+    def test_search_products(self):
+        # Define the category you want to scrape
+        category = "Teknologji/Celulare-Smartwatch/Celulare/Smartphone" 
+
+        # Call the search_products function, passing the db session
+        scraped_data = self.scraper.search_products(category, self.db)
+
+        # Print the output for inspection
+        print("Scraped Data:")
+        for product in scraped_data:
+            print(product)
+
+        # Optional: Check if the scraped data contains expected fields
+        for product in scraped_data:
+            self.assertIn('name', product)
+            self.assertIn('price', product)
+            self.assertIn('image_url', product)
+            self.assertIn('store_name', product)
+            self.assertIn('link_to_product', product)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 # class TestMall75Scraper(unittest.TestCase):
 
@@ -74,39 +114,3 @@ if __name__ == "__main__":
 #             self.assertIn('category_name', product)
 
 
-# # tests/test_scrapers.py
-
-# import unittest
-# from scrapers.foleja_scraper import FolejaScraper
-# from scrapers.gjirafa_scraper import GjirafaScraper
-# from scrapers.mall75_scraper import Mall75Scraper
-# from database.models import create_tables, engine
-
-# class TestFolejaScraper(unittest.TestCase):
-
-#     def setUp(self):
-#         # Create the tables before each test
-#         create_tables()
-        
-#         # Initialize the scraper
-#         self.scraper = FolejaScraper()
-
-#     def test_search_products(self):
-#         # Define the product you want to scrape
-#         category = "Teknologji/Celulare-Smartwatch/Celulare/Smartphone"
-
-#         # Call the search_products function
-#         scraped_data = self.scraper.search_products(category)
-
-#         # Print the output for inspection
-#         print("Scraped Data:")
-#         for product in scraped_data:
-#             print(product)
-
-#         # Optional: Check if the scraped data contains expected fields
-#         for product in scraped_data:
-#             self.assertIn('name', product)
-#             self.assertIn('price', product)
-#             self.assertIn('image_url', product)
-#             self.assertIn('store_name', product)
-#             self.assertIn('link_to_product', product)

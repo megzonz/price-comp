@@ -36,7 +36,8 @@
 #     prompt = f"""
 #     You are tasked with mapping products from a new source to existing products in a database.
 #     Each new product should be mapped to the most similar existing product based on name, category, and price.
-#     Products may have very similar names, but the details such as storage, model type, and color may differ.
+#     Products may have very similar names, but the details such as storage, model type, and color may differ. 
+#     So in cases like this, for example 256gb and 512gb you should know those are different products, and not map them.
 #     For example, "iPhone 15 Pro Max" and "iPhone 15 Pro" are different products. So we need to be careful with that.
 #     If a new product matches an existing one, return the following:
 #     "New Product: [new product name] -> Matched with: [existing product name]".

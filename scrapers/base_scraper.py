@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 from abc import ABC, abstractmethod
-from database.database import insert_product
+from database.database import insert_or_map_product
 
 import sys
 import os 
@@ -16,18 +16,17 @@ class BaseScraper(ABC):
     def get_page(self, url):
         response = self.session.get(url)
         response.raise_for_status()  
-        return BeautifulSoup(response.text, 'html.parser') 
+        return BeautifulSoup(response.text, 'html.parser')
 
-
-    def save_to_db(self, product_data):
+    def save_to_db(self, product_data, db):
         """
         Saves scraped product data to the database
         """
         try:
-            insert_product(product_data)
+            insert_or_map_product(product_data, db)  
         except Exception as e:
             print(f"Failed to save product: {e}")
 
     @abstractmethod
-    def search_products(self, query):
+    def search_products(self, query, db):
         pass

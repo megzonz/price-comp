@@ -1,10 +1,11 @@
 from scrapers.base_scraper import BaseScraper
+from database.models import Category, Product
 
 class FolejaScraper(BaseScraper):
     def __init__(self):
         super().__init__('https://www.foleja.com')
 
-    def search_products(self, category_url, order='acris-score-desc'):
+    def search_products(self, category_url, db, order='acris-score-desc'):
         page_number = 1
         all_products = []
 
@@ -14,6 +15,16 @@ class FolejaScraper(BaseScraper):
         logo_url = logo_element.get('src', '').strip() if logo_element else None
         if logo_url and not logo_url.startswith('http'):
             logo_url = f"{self.base_url}{logo_url}"
+
+        # Check or create the category for this scrape session
+        category = db.query(Category).filter_by(category_url=category_url).first()
+        if not category:
+            # If the category doesn't exist, create it
+            category = Category(category_url=category_url)
+            db.add(category)
+            db.commit()
+
+        category_id = category.id  # Now we have a valid category_id
 
         while True:
             search_url = f"{self.base_url}/{category_url}/?order={order}&p={page_number}"
@@ -44,23 +55,13 @@ class FolejaScraper(BaseScraper):
                     currency_symbol = price_container.select_one('span.currency-symbol')
                     currency = currency_symbol.text.strip() if currency_symbol else ''
 
-                    # Handle whole and decimal parts
                     try:
-                        # Extract the whole price (1,119) and remove any commas
                         whole_price_element = price_container.contents[2].strip().replace(',', '')
-                        
-                        # Extract the decimal price (00)
                         decimal_price_element = price_container.select_one('span.decimal-rounded-price')
                         decimal_price = decimal_price_element.text.strip() if decimal_price_element else '00'
-                        
-                        # Combine the whole and decimal parts
-                        price_text = f"{whole_price_element}.{decimal_price}"  # e.g., "1119.00"
-                        
-                        # Convert to float
-                        price = float(price_text.strip())  # Convert to float
-
-                        # Return the result in the desired format
-                        print(f"{currency} {price:.2f}")  # Ensure two decimal places
+                        price_text = f"{whole_price_element}.{decimal_price}"
+                        price = float(price_text.strip())
+                        print(f"{currency} {price:.2f}")
                     except (IndexError, ValueError) as e:
                         print(f"Error extracting price: {e}")
                         price = 0.00  # Default price when not available
@@ -73,13 +74,13 @@ class FolejaScraper(BaseScraper):
                     'store_name': "Foleja",  
                     'logo_url': logo_url,
                     'category_name': category_url,
-                    'link_to_product': product_url
+                    'link_to_product': product_url,
+                    'category_id': category_id  # Pass the valid category_id here
                 }
 
-                # Save the product to the database
-                self.save_to_db(product_data)
+                # Save the product to the database, passing the db session
+                self.save_to_db(product_data, db)
 
-                # Add to all_products for return if needed
                 all_products.append(product_data)
 
             page_number += 1

@@ -22,27 +22,37 @@ class Product(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     image_url = Column(String)
-    link_to_product = Column(String)
-    store_id = Column(Integer, ForeignKey('stores.id'))
     category_id = Column(Integer, ForeignKey('categories.id'))
 
     # Define relationships
-    store = relationship("Store", back_populates="products")
     category = relationship("Category", back_populates="products")
-    prices = relationship("Price", back_populates="product")  # Link to prices
+    product_store_links = relationship("ProductStoreLink", back_populates="product")
 
-Store.products = relationship("Product", back_populates="store")
 Category.products = relationship("Product", back_populates="category")
+
+class ProductStoreLink(Base):
+    __tablename__ = 'product_store_links'
+    id = Column(Integer, primary_key=True)
+    product_id = Column(Integer, ForeignKey('products.id'))
+    store_id = Column(Integer, ForeignKey('stores.id'))
+    link_to_product = Column(String, nullable=False)
+
+    # Define relationships
+    product = relationship("Product", back_populates="product_store_links")
+    store = relationship("Store", back_populates="product_store_links")
+    prices = relationship("Price", back_populates="product_store_link")
+
+Store.product_store_links = relationship("ProductStoreLink", back_populates="store")
 
 class Price(Base):
     __tablename__ = 'prices'
     id = Column(Integer, primary_key=True)
-    product_id = Column(Integer, ForeignKey('products.id'))
+    product_store_link_id = Column(Integer, ForeignKey('product_store_links.id'))
     price = Column(DECIMAL(10, 2), nullable=False)
     scraped_at = Column(DateTime, default=datetime.datetime.utcnow)
-    
+
     # Define relationship
-    product = relationship("Product", back_populates="prices")
+    product_store_link = relationship("ProductStoreLink", back_populates="prices")
 
 # Database connection
 DB_USER = os.getenv("DB_USER")
