@@ -24,7 +24,7 @@ def insert_or_map_product(product_data, db: Session):
     for product in all_products:
         # Adjust the threshold as per your needs (e.g., 80 for less strict matching, 90 for more strict)
         similarity_ratio = fuzz.ratio(product.name.lower(), product_data['name'].lower())
-        if similarity_ratio > 85:  # If we find a close match, we use this product
+        if similarity_ratio > 80:  
             matched_product = product
             break
 

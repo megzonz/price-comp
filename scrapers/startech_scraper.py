@@ -54,18 +54,17 @@ class StartechScraper(BaseScraper):
                 else:
                     price = 0.00  # Fallback price if not found
 
-                # Create a dictionary for the product data
+
                 product_data = {
                     'name': name,
                     'price': price,
                     'image_url': image_src,
-                    'store_name': "Startech",  # Name of the store
-                    'logo_url': logo_url,  # Store logo URL
+                    'store_name': "Startech",  
+                    'logo_url': logo_url, 
                     'link_to_product': product_url,
-                    'category_name': query  # Add category_name here
+                    'category_name': query 
                 }
 
-                # Print the product data to inspect it
                 print(f"Scraped Product: {product_data}")
 
                 # Save the product to the database

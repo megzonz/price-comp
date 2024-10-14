@@ -21,10 +21,11 @@ def get_product_offers(product_id: int, db: Session = Depends(get_db)):
             Price.price,
             ProductStoreLink.link_to_product
         )
-        .join(ProductStoreLink, ProductStoreLink.product_id == Product.id)
-        .join(Price, ProductStoreLink.id == Price.product_store_link_id)
-        .join(Store, ProductStoreLink.store_id == Store.id)
-        .filter(Product.id == product_id)
+        .select_from(ProductStoreLink)  # Specify the starting table for the join
+        .join(Product, ProductStoreLink.product_id == Product.id)  # Explicitly join Product
+        .join(Price, ProductStoreLink.id == Price.product_store_link_id)  # Explicitly join Price
+        .join(Store, ProductStoreLink.store_id == Store.id)  # Explicitly join Store
+        .filter(Product.id == product_id)  # Filter by product_id
         .all()
     )
 
