@@ -1,5 +1,6 @@
 import json
 import unittest
+from database.database import insert_or_map_product
 from scrapers.foleja_scraper import FolejaScraper
 from scrapers.gjirafa_scraper import GjirafaScraper
 from database.models import create_tables, Session
@@ -20,7 +21,7 @@ class TestGjirafaScraper(unittest.TestCase):
         # Close the session after each test
         self.db.close()
 
-    def test_scrape_all_categories(self):
+    def test_scrape_and_insert_data(self):
         # Load categories from gjirafa_categories.json
         with open('gjirafa_categories.json', 'r') as file:
             categories = json.load(file)
@@ -42,15 +43,21 @@ class TestGjirafaScraper(unittest.TestCase):
             else:
                 updated_categories.append(category)
 
-            # Assert that each product has the expected fields (no 'offers')
+            # Insert each product into the database (or map if it already exists)
             for product in scraped_data:
+                # Ensure that each product has the expected fields
                 self.assertIn('name', product)
+                self.assertIn('base_name', product)
                 self.assertIn('price', product)
                 self.assertIn('image_url', product)
                 self.assertIn('store_name', product)
                 self.assertIn('link_to_product', product)
+                self.assertIn('category_id', product)
 
-        # Save the updated categories back to the file
+                # Insert or map product into the database
+                insert_or_map_product(product, self.db)
+
+        # Save the updated categories back to the file (if any redirects happened)
         with open('gjirafa_categories.json', 'w') as file:
             json.dump(updated_categories, file, indent=4)
 
@@ -59,7 +66,7 @@ class TestFolejaScraper(unittest.TestCase):
     def setUp(self):
         # Create the tables before each test
         create_tables()
-
+        
         # Initialize the scraper
         self.scraper = FolejaScraper()
 
@@ -70,29 +77,33 @@ class TestFolejaScraper(unittest.TestCase):
         # Close the session after each test
         self.db.close()
 
-    def test_search_products(self):
-        # Define the category you want to scrape
-        category = "Teknologji/Celulare-Smartwatch/Celulare/Smartphone" 
+    def test_scrape_and_insert_data(self):
+        # Use the given category path for Foleja
+        category_url = "Teknologji/Celulare-Smartwatch/Celulare/Smartphone"
+        
+        print(f"Scraping category: {category_url}")
+        
+        # Call the search_products function for the given category, passing the db session
+        scraped_data = self.scraper.search_products(category_url, self.db)
 
-        # Call the search_products function, passing the db session
-        scraped_data = self.scraper.search_products(category, self.db)
-
-        # Print the output for inspection
-        print("Scraped Data:")
+        # Insert each product into the database (or map if it already exists)
         for product in scraped_data:
-            print(product)
-
-        # Optional: Check if the scraped data contains expected fields
-        for product in scraped_data:
+            # Ensure that each product has the expected fields
             self.assertIn('name', product)
+            self.assertIn('base_name', product)
             self.assertIn('price', product)
             self.assertIn('image_url', product)
             self.assertIn('store_name', product)
             self.assertIn('link_to_product', product)
+            self.assertIn('category_id', product)
 
+            # Insert or map product into the database
+            insert_or_map_product(product, self.db)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
+
+
 
 
 # class TestMall75Scraper(unittest.TestCase):

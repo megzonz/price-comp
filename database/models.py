@@ -12,55 +12,48 @@ class Store(Base):
     name = Column(String(255), nullable=False)
     logo_url = Column(String)
 
+    offers = relationship("Offer", back_populates="store")
+
 class Category(Base):
     __tablename__ = 'categories'
     id = Column(Integer, primary_key=True)
     category_url = Column(String, nullable=False)
 
+    products = relationship("Product", back_populates="category")
+
 class Product(Base):
     __tablename__ = 'products'
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    image_url = Column(String)
+    base_name = Column(String, nullable=False)
     category_id = Column(Integer, ForeignKey('categories.id'))
 
-    # Define relationships
     category = relationship("Category", back_populates="products")
-    product_store_links = relationship("ProductStoreLink", back_populates="product")
+    offers = relationship("Offer", back_populates="product")
 
-Category.products = relationship("Product", back_populates="category")
-
-class ProductStoreLink(Base):
-    __tablename__ = 'product_store_links'
+class Offer(Base):
+    __tablename__ = 'offers'
     id = Column(Integer, primary_key=True)
     product_id = Column(Integer, ForeignKey('products.id'))
     store_id = Column(Integer, ForeignKey('stores.id'))
+    name = Column(String, nullable=False)
+    image_url = Column(String)
     link_to_product = Column(String, nullable=False)
 
-    # Define relationships
-    product = relationship("Product", back_populates="product_store_links")
-    store = relationship("Store", back_populates="product_store_links")
-    prices = relationship("Price", back_populates="product_store_link")
-
-Store.product_store_links = relationship("ProductStoreLink", back_populates="store")
+    product = relationship("Product", back_populates="offers")
+    store = relationship("Store", back_populates="offers")
+    prices = relationship("Price", back_populates="offer")
 
 class Price(Base):
     __tablename__ = 'prices'
     id = Column(Integer, primary_key=True)
-    product_store_link_id = Column(Integer, ForeignKey('product_store_links.id'))
+    offer_id = Column(Integer, ForeignKey('offers.id'))
     price = Column(DECIMAL(10, 2), nullable=False)
     scraped_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    # Define relationship
-    product_store_link = relationship("ProductStoreLink", back_populates="prices")
+    offer = relationship("Offer", back_populates="prices")
 
 # Database connection
-DB_USER = os.getenv("DB_USER")
-DB_PASS = os.getenv("DB_PASS")
-DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
-
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
+DATABASE_URL = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 

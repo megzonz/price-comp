@@ -1,9 +1,33 @@
+import re
 from scrapers.base_scraper import BaseScraper
-from database.models import Category, Product
+from database.models import Category
 
 class FolejaScraper(BaseScraper):
     def __init__(self):
         super().__init__('https://www.foleja.com')
+
+    def extract_base_name(self, full_name):
+        """
+        Extracts the base name of a product (before the first comma) and removes "Celular" if present.
+        """
+
+        if full_name.lower().startswith("celular"):
+            full_name = full_name[len("celular"):].strip()
+        
+        # Extract the base name before the first comma
+        return full_name.split(',')[0].strip()
+
+    def get_category_id(self, category_url, db):
+        """
+        Fetches or creates a category in the database and returns its id.
+        """
+        category = db.query(Category).filter_by(category_url=category_url).first()
+        if not category:
+            # If the category doesn't exist, create it
+            category = Category(category_url=category_url)
+            db.add(category)
+            db.commit()
+        return category.id
 
     def search_products(self, category_url, db, order='acris-score-desc'):
         page_number = 1
@@ -16,15 +40,8 @@ class FolejaScraper(BaseScraper):
         if logo_url and not logo_url.startswith('http'):
             logo_url = f"{self.base_url}{logo_url}"
 
-        # Check or create the category for this scrape session
-        category = db.query(Category).filter_by(category_url=category_url).first()
-        if not category:
-            # If the category doesn't exist, create it
-            category = Category(category_url=category_url)
-            db.add(category)
-            db.commit()
-
-        category_id = category.id  # Now we have a valid category_id
+        # Get the category_id from the category URL
+        category_id = self.get_category_id(category_url, db)
 
         while True:
             search_url = f"{self.base_url}/{category_url}/?order={order}&p={page_number}"
@@ -42,6 +59,8 @@ class FolejaScraper(BaseScraper):
                     continue
 
                 name = title_element.get('title', '').strip()
+                base_name = self.extract_base_name(name)  
+
                 product_url = title_element.get('href', '')
                 if product_url and not product_url.startswith('http'):
                     product_url = f"{self.base_url}{product_url}"
@@ -69,6 +88,7 @@ class FolejaScraper(BaseScraper):
                 # Create a dictionary for the product data
                 product_data = {
                     'name': name,
+                    'base_name': base_name,  # Add base_name
                     'price': price,
                     'image_url': image_src,
                     'store_name': "Foleja",  

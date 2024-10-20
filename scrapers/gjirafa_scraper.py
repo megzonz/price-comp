@@ -1,10 +1,29 @@
 import re
 from scrapers.base_scraper import BaseScraper
+from database.models import Category
 
 class GjirafaScraper(BaseScraper):
     def __init__(self):
         super().__init__('https://gjirafa50.com')
         self.redirected_category_url = None  # Initialize redirected_category_url
+
+    def extract_base_name(self, full_name):
+        """
+        Extracts the base name of a product (before the first comma).
+        """
+        return full_name.split(',')[0].strip()
+
+    def get_category_id(self, category_name, db):
+        """
+        Fetches or creates a category in the database and returns its id.
+        """
+        category = db.query(Category).filter_by(category_url=category_name).first()
+        if not category:
+            # If the category doesn't exist, create a new one
+            category = Category(category_url=category_name)
+            db.add(category)
+            db.commit()
+        return category.id
 
     def search_products(self, query, db):
         page_number = 1
@@ -17,6 +36,9 @@ class GjirafaScraper(BaseScraper):
         logo_url = logo_element.get('src', '').strip() if logo_element else None
         if logo_url and not logo_url.startswith('http'):
             logo_url = f"{self.base_url}{logo_url}"
+
+        # Get the category_id from the category name (category_url)
+        category_id = self.get_category_id(category_url, db)
 
         while True:
             search_url = f"{self.base_url}/{category_url}?pagenumber={page_number}&orderby=&hls=false&is=true"
@@ -53,6 +75,7 @@ class GjirafaScraper(BaseScraper):
                     continue
 
                 name = title_element.get('title', '').strip()
+                base_name = self.extract_base_name(name)  # Extract the base name here
                 product_url = title_element.get('href', '')
                 if product_url and not product_url.startswith('http'):
                     product_url = f"{self.base_url}{product_url}"
@@ -66,15 +89,16 @@ class GjirafaScraper(BaseScraper):
 
                 price = float(re.sub(r'[^\d.]', '', getting_price))
 
-                # Create a dictionary for the product data
+                # Create a dictionary for the product data, now including the base_name and category_id
                 product_data = {
                     'name': name,
+                    'base_name': base_name,  # Base name added here
                     'price': price,
                     'image_url': image_src,
                     'store_name': "Gjirafa50",
                     'logo_url': logo_url,
                     'link_to_product': product_url,
-                    'category_name': category_url  
+                    'category_id': category_id  # Add the category ID here
                 }
 
                 # Save the product to the database using BaseScraper's save_to_db
